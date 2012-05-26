@@ -1,70 +1,69 @@
 ﻿
+<script type="text/javascript" src="../js/ZipFile.complete.js"></script>
 <script type="text/javascript" src="../js/base64.js"></script>
-<script type="text/javascript" src="../js/zip.js"></script>
 <script type="text/javascript">
 <!--
+// In my demo, this gets attached to a click event.
+// it instantiates a ZipFile, and provides a callback that is
+// invoked when the zip is read.  This can take a few seconds on a
+// large zip file, so it's asynchronous. 
+var readFile = function(urltoload){
+    $("#status").html("<br/>");
+    var url= urltoload;
+    var doneReading = function(zip){
+        extractEntries(zip);
+    };
+    var zipFile = new ZipFile(url, doneReading);
+};
+
+
+// this function extracts the entries from an instantiated zip
+function extractEntries(zip){
+
+    // clear
+    $("#report").html('');
+
+    var extractCb = function(id) {
+        // this callback is invoked with the entry name, and entry text
+        // in my demo, the text is just injected into an accordion panel.
+        return (function(entryName, entryText){
+            $("#" + id).append("<img src='" +
+                                "data:image/png" +";base64," + btoa(entryText) +
+                                "'/>");
+            $("#status").append("extract cb, entry(" + entryName + ")  id(" + id + ")<br/>");
+        });
+    }
+
+    // for each entry in the zip, extract it. 
+    for (var i=0; i<zip.entries.length;  i++) {
+        var entry = zip.entries[i];
+
+        var entryInfo = "<h4><a>" + entry.name + "</a></h4>\n<div>";
+
+        // contrive an id for the entry, make it unique
+        var randomId = "id-"+ Math.floor((Math.random() * 1000000000));
+
+        entryInfo += "<span class='inputDiv'><h4>Content:</h4><span id='" + randomId +
+            "'></span></span></div>\n";
+
+        // insert the info for one entry as the last child within the report div
+        $("#report").append(entryInfo);
+
+        // extract asynchronously
+        entry.extract(extractCb(randomId));
+    }
+}
+
+
+
 function getstart()
 {
-  this.get_content_type_by_filename = function(filename){
-      var extension = filename.split(".").pop();
-
-      var types = {
-      jpg :  "image/jpeg",
-      png :  "image/png",
-      txt :  "text/plain",
-      html : "text/html"
-    };
-    return types[extension];
-  };
-
-  bin = $.get("getzip");
-
-  $('#zip_items').html('');
-
-   for (var i = 0; i < bin.length; i++){
-      //後で charset=x-user-defined としているので
-      //0xffとの論理積を取る必要があるらしい...
-      bytes[i] = bin.charCodeAt(i) & 0xff;
-    }
-    var zip = zip.inflate(bytes);  //UNZIP
-    for ( var j in zip.files ) {
-      var file = zip.files[j];
-      $('#zip_items').append( $('<div></div>') );
-        if (file.name.match(/\/$/) ) {
-          $('#zip_items>div:last').append( 'dir : '+ file.name );
-          continue;
-        }
-        var content_type = this_obj.get_content_type_by_filename(file.name);
-        
-        //filenameが日本語の場合、どうなるのだろう?
-        $('#zip_items>div:last').append(' name:'+ file.name+ 
-                        ' type:'+ content_type +
-                        ' size:'+ file.fileSize+ 'byte' +
-                        ' modified:'+ file.modified+ '<br>' );
-
-        //dankogaiさんのbase64.jsでbynary to utf8
-        if (content_type=='text/plain'){
-            $('#zip_items>div:last')
-                .append('<textarea cols=60 rows=3>'+
-                        Base64.btou(file.data)+'</textarea>');
-        } else if (content_type=='text/html'){
-            //iframeやimgでは、src属性にbase64値をsetできるらしい
-            $('#zip_items>div:last')
-                .append("<iframe src='" +
-                        "data:" + content_type +";base64," + btoa(file.data) +
-                        "'></iframe>");
-        } else if (content_type.indexOf("image/") == 0){
-            //iframeやimgでは、src属性にbase64値をsetできるらしい
-            $('#zip_items>div:last')
-                .append("<img src='" +
-                        "data:" + content_type +";base64," + btoa(file.data) +
-                        "'/>");
-       }
-    }
+  readFile("getzip");
 }
 // -->
 </script>
-<div id='#zip_items'></div>
+<div id='status'></div>
+<div id='report'></div>
 <div id="result">受信結果</div>
 <div id="process">受信中</div>
 <input type="button" value="受信開始" onClick="getstart()">
