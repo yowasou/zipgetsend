@@ -1,4 +1,6 @@
 Zipgetsend::Application.routes.draw do
+  get "testz/show"
+
   get "testz/getzip"
 
   # The priority is based upon order of creation:

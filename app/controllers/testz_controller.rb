@@ -8,4 +8,6 @@ class TestzController < ApplicationController
       send_data(buffer , :type=>'application/zip', :filename => "MMDTest.zip", :disposition=>'attached')
     }
   end
+  def show
+  end
 end
